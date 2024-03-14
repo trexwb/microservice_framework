@@ -2,7 +2,7 @@
  * @Author: trexwb
  * @Date: 2024-01-17 16:49:29
  * @LastEditors: trexwb
- * @LastEditTime: 2024-03-11 13:49:36
+ * @LastEditTime: 2024-03-14 13:45:16
  * @FilePath: /laboratory/microservice/account/src/app/helper/secrets.js
  * @Description: 
  * @一花一世界，一叶一如来
@@ -13,12 +13,12 @@ const secretsModel = require('@model/secrets');
 
 function buildWhere(that, where) {
 	function applyWhereCondition(field, value) {
-        if (Array.isArray(value)) {
-            if (value.length > 0) that.whereIn(field, value);
-        } else {
-            that.where(field, value);
-        }
-    }
+		if (Array.isArray(value)) {
+			if (value.length > 0) that.whereIn(field, value);
+		} else {
+			that.where(field, value);
+		}
+	}
 	that.where('id', '>', 0);
 	if (where.id) {
 		applyWhereCondition('id', where.id);
@@ -55,7 +55,9 @@ module.exports = {
 					cacheCast.setCacheWithTags('secrets', cacheKey, secretRow)
 				}
 			}
-		} catch (err) { }
+		} catch (error) {
+			throw error;
+		}
 		return secretRow;
 	},
 	getList: async (where, order, _page, _pageSize) => { // await secretsHelper.getList({keywords: '1',status: '0'});
@@ -74,7 +76,9 @@ module.exports = {
 					cacheCast.setCacheWithTags('secrets', cacheKey, rows);
 				}
 			}
-		} catch (err) { }
+		} catch (error) {
+			throw error;
+		}
 		return rows;
 	},
 	getId: async (id) => {
@@ -93,7 +97,9 @@ module.exports = {
 					cacheCast.setCacheWithTags('secrets', cacheKey, row);
 				}
 			}
-		} catch (err) { }
+		} catch (error) {
+			throw error;
+		}
 		return row;
 	},
 	save: async (_data) => {
@@ -102,7 +108,9 @@ module.exports = {
 		try {
 			affects = await secretsModel.save(_data);
 			await cacheCast.clearCacheByTag('secrets');
-		} catch (err) { }
+		} catch (error) {
+			throw error;
+		}
 		return affects;
 	},
 	restore: async (id) => {
@@ -115,7 +123,9 @@ module.exports = {
 				})
 			});
 			await cacheCast.clearCacheByTag('secrets');
-		} catch (err) { }
+		} catch (error) {
+			throw error;
+		}
 		return affects;
 	},
 	delete: async (id) => {
@@ -128,7 +138,9 @@ module.exports = {
 				})
 			});
 			await cacheCast.clearCacheByTag('secrets');
-		} catch (err) { }
+		} catch (error) {
+			throw error;
+		}
 		return affects;
 	},
 }

@@ -2,7 +2,7 @@
  * @Author: trexwb
  * @Date: 2024-01-17 16:49:29
  * @LastEditors: trexwb
- * @LastEditTime: 2024-03-11 14:12:19
+ * @LastEditTime: 2024-03-14 11:22:34
  * @FilePath: /laboratory/microservice/account/src/app/model/secretsLogs.js
  * @Description: 
  * @一花一世界，一叶一如来
@@ -10,6 +10,7 @@
  */
 const databaseCast = require('@cast/database');
 const utils = require('@utils/index');
+const logCast = require('@cast/log');
 const moment = require('moment-timezone');
 
 module.exports = {
@@ -48,9 +49,11 @@ module.exports = {
 					return row;
 				})
 				.catch(() => {
+					logCast.writeError(error.toString());
 					return false;
 				});
-		} catch (err) {
+		} catch (error) {
+			logCast.writeError(error.toString());
 			return false;
 		}
 	},
@@ -98,7 +101,8 @@ module.exports = {
 						return await dbWrite(this.$table).insert({ ...dataRow, created_at: dbWrite.fn.now(), updated_at: dbWrite.fn.now() });
 					}
 				});
-			} catch (err) {
+			} catch (error) {
+				logCast.writeError(error.toString());
 				return false;
 			}
 		}

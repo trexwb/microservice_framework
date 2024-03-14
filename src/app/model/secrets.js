@@ -2,7 +2,7 @@
  * @Author: trexwb
  * @Date: 2024-01-29 08:30:55
  * @LastEditors: trexwb
- * @LastEditTime: 2024-03-11 14:12:04
+ * @LastEditTime: 2024-03-14 11:22:21
  * @FilePath: /laboratory/microservice/account/src/app/model/secrets.js
  * @Description: 
  * @一花一世界，一叶一如来
@@ -10,6 +10,7 @@
  */
 const databaseCast = require('@cast/database');
 const utils = require('@utils/index');
+const logCast = require('@cast/log');
 const moment = require('moment-timezone');
 
 module.exports = {
@@ -56,9 +57,11 @@ module.exports = {
 					return row;
 				})
 				.catch(() => {
+					logCast.writeError(error.toString());
 					return false;
 				});
-		} catch (err) {
+		} catch (error) {
+			logCast.writeError(error.toString());
 			return false;
 		}
 	},
@@ -76,9 +79,11 @@ module.exports = {
 					return row;
 				})
 				.catch(() => {
+					logCast.writeError(error.toString());
 					return false;
 				});
-		} catch (err) {
+		} catch (error) {
+			logCast.writeError(error.toString());
 			return false;
 		}
 	},
@@ -108,13 +113,15 @@ module.exports = {
 						}))
 					})
 					.catch(() => {
+						logCast.writeError(error.toString());
 						return false;
 					});
 				return { total: total, list: rows };
 			} else {
 				return { total: 0, list: [] };
 			}
-		} catch (err) {
+		} catch (error) {
+			logCast.writeError(error.toString());
 			return { total: 0, list: [] };
 		}
 	},
@@ -144,13 +151,15 @@ module.exports = {
 						}))
 					})
 					.catch(() => {
+						logCast.writeError(error.toString());
 						return false;
 					});
 				return { total: total, list: rows };
 			} else {
 				return { total: 0, list: [] };
 			}
-		} catch (err) {
+		} catch (error) {
+			logCast.writeError(error.toString());
 			return { total: 0, list: [] };
 		}
 	},
@@ -199,7 +208,8 @@ module.exports = {
 						return await dbWrite(this.$table).insert({ ...dataRow, created_at: dbWrite.fn.now(), updated_at: dbWrite.fn.now() });
 					}
 				});
-			} catch (err) {
+			} catch (error) {
+				logCast.writeError(error.toString());
 				return false;
 			}
 		}
@@ -213,7 +223,8 @@ module.exports = {
 				.update({
 					deleted_at: null
 				});
-		} catch (err) {
+		} catch (error) {
+			logCast.writeError(error.toString());
 			return false;
 		}
 	},
@@ -226,7 +237,8 @@ module.exports = {
 				.update({
 					deleted_at: dbWrite.fn.now()
 				});
-		} catch (err) {
+		} catch (error) {
+			logCast.writeError(error.toString());
 			return false;
 		}
 	}
