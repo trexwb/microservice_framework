@@ -2,8 +2,8 @@
  * @Author: trexwb
  * @Date: 2024-01-17 16:49:29
  * @LastEditors: trexwb
- * @LastEditTime: 2024-03-14 13:45:16
- * @FilePath: /laboratory/microservice/account/src/app/helper/secrets.js
+ * @LastEditTime: 2024-03-18 15:21:21
+ * @FilePath: /laboratory/microservice/payment/src/app/helper/secrets.js
  * @Description: 
  * @一花一世界，一叶一如来
  * @Copyright (c) 2024 by 杭州大美, All Rights Reserved. 
@@ -13,12 +13,12 @@ const secretsModel = require('@model/secrets');
 
 function buildWhere(that, where) {
 	function applyWhereCondition(field, value) {
-		if (Array.isArray(value)) {
-			if (value.length > 0) that.whereIn(field, value);
-		} else {
-			that.where(field, value);
-		}
-	}
+        if (Array.isArray(value)) {
+            if (value.length > 0) that.whereIn(field, value);
+        } else {
+            that.where(field, value);
+        }
+    }
 	that.where('id', '>', 0);
 	if (where.id) {
 		applyWhereCondition('id', where.id);
@@ -38,7 +38,7 @@ function buildWhere(that, where) {
 	}
 }
 
-module.exports = {
+const secretsHelper = {
 	getAppId: async (appId) => {
 		if (!appId) return;
 		let secretRow = {};
@@ -52,7 +52,7 @@ module.exports = {
 					})
 				});
 				if (secretRow?.id) {
-					cacheCast.setCacheWithTags('secrets', cacheKey, secretRow)
+					await cacheCast.setCacheWithTags('secrets', cacheKey, secretRow)
 				}
 			}
 		} catch (error) {
@@ -61,7 +61,7 @@ module.exports = {
 		return secretRow;
 	},
 	getList: async (where, order, _page, _pageSize) => { // await secretsHelper.getList({keywords: '1',status: '0'});
-		let rows = {};
+		let rows = false;
 		try {
 			const page = Number(_page ?? 1);
 			const pageSize = Number(_pageSize ?? 10);
@@ -73,7 +73,7 @@ module.exports = {
 					buildWhere(this, where)
 				}, null, pageSize, offset);
 				if (rows?.total) {
-					cacheCast.setCacheWithTags('secrets', cacheKey, rows);
+					await cacheCast.setCacheWithTags('secrets', cacheKey, rows);
 				}
 			}
 		} catch (error) {
@@ -94,7 +94,7 @@ module.exports = {
 					})
 				});
 				if (row?.id) {
-					cacheCast.setCacheWithTags('secrets', cacheKey, row);
+					await cacheCast.setCacheWithTags('secrets', cacheKey, row);
 				}
 			}
 		} catch (error) {
@@ -102,11 +102,11 @@ module.exports = {
 		}
 		return row;
 	},
-	save: async (_data) => {
-		if (!_data) return;
+	save: async (data) => {
+		if (!data) return;
 		let affects = {};
 		try {
-			affects = await secretsModel.save(_data);
+			affects = await secretsModel.save(data);
 			await cacheCast.clearCacheByTag('secrets');
 		} catch (error) {
 			throw error;
@@ -144,3 +144,5 @@ module.exports = {
 		return affects;
 	},
 }
+
+module.exports = secretsHelper;

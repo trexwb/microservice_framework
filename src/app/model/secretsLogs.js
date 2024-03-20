@@ -2,8 +2,8 @@
  * @Author: trexwb
  * @Date: 2024-01-17 16:49:29
  * @LastEditors: trexwb
- * @LastEditTime: 2024-03-14 11:22:34
- * @FilePath: /laboratory/microservice/account/src/app/model/secretsLogs.js
+ * @LastEditTime: 2024-03-18 09:29:38
+ * @FilePath: /laboratory/microservice/payment/src/app/model/secretsLogs.js
  * @Description: 
  * @一花一世界，一叶一如来
  * @Copyright (c) 2024 by 杭州大美, All Rights Reserved. 
@@ -13,7 +13,17 @@ const utils = require('@utils/index');
 const logCast = require('@cast/log');
 const moment = require('moment-timezone');
 
-module.exports = {
+const DEFAULT_LIMIT = 10; // 默认分页限制
+const MAX_LIMIT = 1000; // 最大分页限制
+const SHANGHAI_TZ = 'Asia/Shanghai'; // 时区常量
+const FORMAT = 'YYYY-MM-DD HH:mm:ss'; // 日期格式常量
+
+// 抽象日期格式化功能
+const formatDateTime = (date, timezone = SHANGHAI_TZ, format = FORMAT) => {
+	return moment(date).tz(timezone).format(format);
+};
+
+const secretsLogsModel = {
 	$table: `${databaseCast.prefix}secrets_logs`,// 为模型指定表名
 	$primaryKey: 'id', // 默认情况下指定'id'作为表主键，也可以指定主键名
 	$fillable: [
@@ -44,33 +54,32 @@ module.exports = {
 				.where(where)
 				.first()
 				.then((row) => {
-					row.created_at = moment(row.created_at).tz('Asia/Shanghai').format('YYYY-MM-DD HH:mm:ss');
-					row.updated_at = moment(row.updated_at).tz('Asia/Shanghai').format('YYYY-MM-DD HH:mm:ss');
+					row.created_at = formatDateTime(row.created_at, SHANGHAI_TZ, FORMAT);
+					row.updated_at = formatDateTime(row.updated_at, SHANGHAI_TZ, FORMAT);
 					return row;
 				})
 				.catch(() => {
-					logCast.writeError(error.toString());
+					logCast.writeError(__filename + ':' + error.toString());
 					return false;
 				});
 		} catch (error) {
-			logCast.writeError(error.toString());
 			return false;
 		}
 	},
-	save: async function (_data) {
-		if (!_data) return;
+	save: async function (data) {
+		if (!data) return;
 		const dbWrite = databaseCast.dbWrite();
 		const keysArray = [...this.$fillable, ...this.$guarded, ...this.$hidden]; // 这是你的键数组
 		const dataRow = keysArray.reduce((result, key) => {
-			if (_data.hasOwnProperty(key)) {
+			if (data.hasOwnProperty(key)) {
 				if (this.$casts[key] === 'json') {
-					result[key] = JSON.stringify(_data[key]);
+					result[key] = JSON.stringify(data[key]);
 				} else if (this.$casts[key] === 'integer') {
-					result[key] = Number(_data[key]);
+					result[key] = Number(data[key]);
 				} else if (this.$casts[key] === 'datetime') {
-					result[key] = _data[key] ? utils.dateFormatter(_data[key], 'Y-m-d H:i:s', 1, false) : null;
+					result[key] = data[key] ? utils.dateFormatter(data[key], 'Y-m-d H:i:s', 1, false) : null;
 				} else {
-					result[key] = _data[key];
+					result[key] = data[key];
 				}
 			}
 			return result;
@@ -102,9 +111,11 @@ module.exports = {
 					}
 				});
 			} catch (error) {
-				logCast.writeError(error.toString());
+				logCast.writeError(__filename + ':' + error.toString());
 				return false;
 			}
 		}
 	}
 }
+
+module.exports = secretsLogsModel;
