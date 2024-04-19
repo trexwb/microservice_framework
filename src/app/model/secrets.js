@@ -2,8 +2,8 @@
  * @Author: trexwb
  * @Date: 2024-01-29 08:30:55
  * @LastEditors: trexwb
- * @LastEditTime: 2024-03-19 16:24:44
- * @FilePath: /laboratory/microservice/payment/src/app/model/secrets.js
+ * @LastEditTime: 2024-04-16 17:57:54
+ * @FilePath: /laboratory/Users/wbtrex/website/localServer/node/damei/package/node/microservice_framework/src/app/model/secrets.js
  * @Description: 
  * @一花一世界，一叶一如来
  * @Copyright (c) 2024 by 杭州大美, All Rights Reserved. 
@@ -11,6 +11,7 @@
 const databaseCast = require('@cast/database');
 const utils = require('@utils/index');
 const logCast = require('@cast/log');
+const secretsLogsModel = require('@model/secretsLogs');
 const moment = require('moment-timezone');
 
 const DEFAULT_LIMIT = 10; // 默认分页限制
@@ -20,7 +21,7 @@ const FORMAT = 'YYYY-MM-DD HH:mm:ss'; // 日期格式常量
 
 // 抽象日期格式化功能
 const formatDateTime = (date, timezone = SHANGHAI_TZ, format = FORMAT) => {
-	return moment(date).tz(timezone).format(format);
+  return moment(date).tz(timezone).format(format);
 };
 
 const secretsModel = {
@@ -65,9 +66,11 @@ const secretsModel = {
 			else query.whereNull('deleted_at');
 			return await query.first()
 				.then((row) => {
-					row.created_at = formatDateTime(row.created_at, SHANGHAI_TZ, FORMAT);
-					row.updated_at = formatDateTime(row.updated_at, SHANGHAI_TZ, FORMAT);
-					return row;
+					if (row) {
+						row.created_at = formatDateTime(row?.created_at, SHANGHAI_TZ, FORMAT);
+						row.updated_at = formatDateTime(row?.updated_at, SHANGHAI_TZ, FORMAT);
+					}
+					return JSON.parse(JSON.stringify(row));
 				})
 				.catch((error) => {
 					logCast.writeError(__filename + ':' + error.toString());
@@ -113,8 +116,8 @@ const secretsModel = {
 					.then((rows) => {
 						return rows.map(row => ({
 							...row,
-							created_at: formatDateTime(row.created_at, SHANGHAI_TZ, FORMAT),
-							updated_at: formatDateTime(row.updated_at, SHANGHAI_TZ, FORMAT),
+							created_at: formatDateTime(row?.created_at, SHANGHAI_TZ, FORMAT),
+							updated_at: formatDateTime(row?.updated_at, SHANGHAI_TZ, FORMAT),
 						}));
 					})
 					.catch((error) => {
@@ -137,56 +140,95 @@ const secretsModel = {
 		return await this.getListOrTrashList(where, order, limit, offset, true);
 	},
 	save: async function (data) {
-		if (!data) return;
-		const dbWrite = databaseCast.dbWrite();
-		const keysArray = [...this.$fillable, ...this.$guarded, ...this.$hidden]; // 过滤不存在的字段
-		const dataRow = keysArray.reduce((result, key) => {
-			if (data.hasOwnProperty(key)) {
-				if (this.$casts[key] === 'json') {
-					result[key] = JSON.stringify(data[key]);
-				} else if (this.$casts[key] === 'integer') {
-					result[key] = Number(data[key]);
-				} else if (this.$casts[key] === 'datetime') {
-					result[key] = data[key] ? utils.dateFormatter(data[key], 'Y-m-d H:i:s', 1, false) : null;
-				} else {
-					result[key] = data[key];
-				}
-			}
-			return result;
-		}, {});
+    if (!data) return;
+    const dbWrite = databaseCast.dbWrite();
+    const keysArray = [...this.$fillable, ...this.$guarded, ...this.$hidden]; // 过滤不存在的字段
+    const dataRow = keysArray.reduce((result, key) => {
+      // 确保data[key]存在且为可转换类型
+      if (data.hasOwnProperty(key) && data[key] !== null && data[key] !== undefined) {
+        const castType = this.$casts[key];
+        if (castType === 'json') {
+          result[key] = utils.safeJSONStringify(data[key]);
+        } else if (castType === 'integer') {
+          result[key] = utils.safeCastToInteger(data[key]);
+        } else if (castType === 'datetime') {
+          result[key] = data[key] ? utils.dateFormatter(data[key], 'Y-m-d H:i:s', 1, false) : null;
+        } else if (data[key] !== null && data[key] !== undefined) { // 添加对 data[key] 的非空检查
+          result[key] = data[key].toString();
+        } else {
+          delete result[key];
+        }
+      }
+      return result;
+    }, {});
 
-		if (!dataRow.id) {
-			return await dbWrite(this.$table).insert({ ...dataRow, created_at: dbWrite.fn.now(), updated_at: dbWrite.fn.now() });
-		} else {
-			try {
-				return await dbWrite(this.$table).select('id').where(function () {
-					this.where('id', '>', 0)
-					if (Array.isArray(dataRow.id)) {
-						if (dataRow.id.length > 0) this.whereIn('id', dataRow.id);
-					} else {
-						this.where('id', dataRow.id);
-					}
-				}).then(async (result) => {
-					if (result.length > 0) {
-						await dbWrite(this.$table).update({ ...dataRow, updated_at: dbWrite.fn.now() }).where(function () {
-							this.where('id', '>', 0)
-							if (Array.isArray(dataRow.id)) {
-								if (dataRow.id.length > 0) this.whereIn('id', dataRow.id);
-							} else {
-								this.where('id', dataRow.id);
-							}
-						});
-						return Array.isArray(dataRow.id) ? dataRow.id : [dataRow.id];
-					} else {
-						return await dbWrite(this.$table).insert({ ...dataRow, created_at: dbWrite.fn.now(), updated_at: dbWrite.fn.now() });
-					}
-				});
-			} catch (error) {
-				logCast.writeError(__filename + ':' + error.toString());
-				return false;
-			}
-		}
-	},
+    if (!dataRow.id) {
+      return await dbWrite(this.$table).insert({ ...dataRow, created_at: dbWrite.fn.now(), updated_at: dbWrite.fn.now() })
+        .then(async (affects) => {
+          if (affects[0]) await secretsLogsModel.save({
+            secret_id: affects[0],
+            source: null,
+            handle: dataRow
+          });
+          return affects;
+        })
+        .catch((error) => {
+          logCast.writeError(__filename + ':' + error.toString());
+          return false;
+        });
+    } else {
+      try {
+        return await dbWrite(this.$table).select([...new Set([...this.$guarded, ...this.$fillable, ...this.$hidden])]).where(function () {
+          this.where('id', '>', 0)
+          if (Array.isArray(dataRow.id)) {
+            if (dataRow.id.length > 0) this.whereIn('id', dataRow.id);
+          } else {
+            this.where('id', dataRow.id);
+          }
+        }).then(async (result) => {
+          if (result.length > 0) {
+            await dbWrite(this.$table).update({ ...dataRow, updated_at: dbWrite.fn.now() }).where(function () {
+              this.where('id', '>', 0)
+              if (Array.isArray(dataRow.id)) {
+                if (dataRow.id.length > 0) this.whereIn('id', dataRow.id);
+              } else {
+                this.where('id', dataRow.id);
+              }
+            }).then(async () => {
+              result.forEach(async (row) => {
+                if (row?.id) await secretsLogsModel.save({
+                  secret_id: row.id,
+                  source: row,
+                  handle: dataRow
+                });
+              });
+            }).catch((error) => {
+              logCast.writeError(__filename + ':' + error.toString());
+              return false;
+            });
+            return Array.isArray(dataRow.id) ? dataRow.id : [dataRow.id];
+          } else {
+            return await dbWrite(this.$table).insert({ ...dataRow, created_at: dbWrite.fn.now(), updated_at: dbWrite.fn.now() })
+              .then(async (affects) => {
+                if (affects[0]) await secretsLogsModel.save({
+                  secret_id: affects[0],
+                  source: null,
+                  handle: dataRow
+                });
+                return affects;
+              })
+              .catch((error) => {
+                logCast.writeError(__filename + ':' + error.toString());
+                return false;
+              });
+          }
+        });
+      } catch (error) {
+        logCast.writeError(__filename + ':' + error.toString());
+        return false;
+      }
+    }
+  },
 	restore: async function (where) {
 		if (!where) return;
 		const dbWrite = databaseCast.dbWrite();

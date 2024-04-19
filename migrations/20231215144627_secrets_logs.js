@@ -17,7 +17,7 @@
 exports.up = function(knex) {
     return knex.schema.createTable(`${process.env.DB_PREFIX}secrets_logs`, (table) => {
         table.increments('id');
-        table.integer('secret_id').unsigned().comment('密钥编号');
+        table.integer('secret_id').unsigned(true).comment('密钥编号');
         table.foreign('secret_id').references('id').inTable(`${process.env.DB_PREFIX}secrets`);
         table.json('source').nullable().comment('操作前');
         table.json('handle').nullable().comment('操作内容');

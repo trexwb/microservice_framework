@@ -2,8 +2,8 @@
  * @Author: trexwb
  * @Date: 2024-01-15 12:21:18
  * @LastEditors: trexwb
- * @LastEditTime: 2024-01-23 15:54:13
- * @FilePath: /laboratory/microservice/account/src/utils/status.js
+ * @LastEditTime: 2024-04-09 16:07:00
+ * @FilePath: /laboratory/Users/wbtrex/website/localServer/node/damei/package/node/microservice_framework/src/utils/status.js
  * @Description: 
  * @一花一世界，一叶一如来
  * Copyright (c) 2024 by 杭州大美, All Rights Reserved. 
@@ -20,20 +20,20 @@
 // 500 Internal Server Error: 服务器内部错误，无法完成请求。
 
 module.exports = {
-    statusMap: {
-        200: 'Success',
-        201: 'Created',
-        204: 'No Content',
-        304: 'Not Modified',
-        400: 'Bad Request',
-        401: 'Unauthorized',
-        403: 'Forbidden',
-        404: 'Not Found',
-        500: 'Internal Server Error',
-    },
-    error: (msg) => {
-        return {
-            error: msg
-        }
+  statusMap: {
+    200: 'Success',
+    201: 'Created',
+    204: 'No Content',
+    304: 'Not Modified',
+    400: 'Bad Request',
+    401: 'Unauthorized',
+    403: 'Forbidden',
+    404: 'Not Found',
+    500: 'Internal Server Error',
+  },
+  error: (msg) => {
+    return {
+      error: msg
     }
+  }
 };

@@ -4,23 +4,25 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "NODE_ENV=production node ./src/index.js",
+    "start": "node ./src/index.js",
     "dev": "nodemon --trace-deprecation ./src/index.js",
+    "backup": "node ./backup.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "aliyun-sdk": "^1.12.10",
     "cluster": "^0.7.7",
     "crypto": "^1.0.1",
     "dotenv": "^16.4.5",
-    "glob": "^10.3.10",
+    "glob": "^10.3.12",
     "hprose": "^2.0.51",
     "knex": "^3.1.0",
     "module-alias": "^2.2.3",
     "moment-timezone": "^0.5.45",
     "multer": "^1.4.5-lts.1",
-    "mysql2": "^3.9.2",
+    "mysql2": "^3.9.6",
     "node-schedule": "^2.1.1",
     "os": "^0.1.2",
     "path": "^0.12.7",
@@ -44,6 +46,7 @@
     "@utils": "src/utils"
   },
   "devDependencies": {
+    "@types/module-alias": "^2.0.4",
     "nodemon": "^3.1.0"
   }
 }

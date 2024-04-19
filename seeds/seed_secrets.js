@@ -2,8 +2,8 @@
  * @Author: trexwb
  * @Date: 2024-01-04 14:29:21
  * @LastEditors: trexwb
- * @LastEditTime: 2024-03-12 12:04:54
- * @FilePath: /print/Users/wbtrex/website/localServer/node/damei/package/node/microservice_framework/seeds/seed_secrets.js
+ * @LastEditTime: 2024-04-16 11:45:56
+ * @FilePath: /laboratory/Users/wbtrex/website/localServer/node/damei/package/node/microservice_framework/seeds/seed_secrets.js
  * @Description: 
  * @一花一世界，一叶一如来
  * @Copyright (c) 2024 by 杭州大美, All Rights Reserved. 
@@ -16,7 +16,14 @@ const utils = require('@utils/index');
  * @returns { Promise<void> } 
  */
 exports.seed = async function (knex) {
-  const total = (await knex.from(`${process.env.DB_PREFIX}secrets`).count('id', { as: 'total' }).first())?.total || 0;
+  const total = await knex.from(`${process.env.DB_PREFIX}secrets`)
+    .count('id', { as: 'total' })
+    .first()
+    .then((row) => {
+      return row.total || 0
+    }).catch(() => {
+      return 0
+    });
   if (total === 0) {
     // Deletes ALL existing entries
     // await knex(`${process.env.DB_PREFIX}secrets`).del()

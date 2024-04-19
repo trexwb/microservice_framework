@@ -2,8 +2,8 @@
  * @Author: trexwb
  * @Date: 2024-01-09 08:52:32
  * @LastEditors: trexwb
- * @LastEditTime: 2024-03-16 11:04:11
- * @FilePath: /laboratory/microservice/payment/src/app/cast/cache.js
+ * @LastEditTime: 2024-03-23 10:41:27
+ * @FilePath: /laboratory/Users/wbtrex/website/localServer/node/damei/package/node/microservice_framework/src/app/cast/cache.js
  * @Description: 
  * @一花一世界，一叶一如来
  * @Copyright (c) 2024 by 杭州大美, All Rights Reserved. 
@@ -26,12 +26,10 @@ module.exports = {
             host: redisConfig.host || '',
             port: redisConfig.port || '',
           },
-          database: redisConfig.db || 1,
-        });
-        await this.client.connect();
-        // await this.client.on('close', function () {
-        //   this.client = null;
-        // });
+          database: redisConfig.db || 0,
+        }).on('error', () => {
+          this.client = null;
+        }).connect();
       } catch (error) {
         logCast.writeError(`Error initializing Redis client: ${error}`);
       }
@@ -100,7 +98,8 @@ module.exports = {
   destroy: async function () {
     // if (this.client) {
     //   try {
-    //     await this.client.quit();
+    //     await this.client.disconnect();
+    //     // await this.client.quit();
     //   } catch (error) {
     //     logCast.writeError(`Error destroying Redis client: ${error}`);
     //   }

@@ -2,8 +2,8 @@
  * @Author: trexwb
  * @Date: 2024-01-17 16:49:29
  * @LastEditors: trexwb
- * @LastEditTime: 2024-03-18 09:29:38
- * @FilePath: /laboratory/microservice/payment/src/app/model/secretsLogs.js
+ * @LastEditTime: 2024-04-16 17:57:57
+ * @FilePath: /laboratory/Users/wbtrex/website/localServer/node/damei/package/node/microservice_framework/src/app/model/secretsLogs.js
  * @Description: 
  * @一花一世界，一叶一如来
  * @Copyright (c) 2024 by 杭州大美, All Rights Reserved. 
@@ -20,7 +20,7 @@ const FORMAT = 'YYYY-MM-DD HH:mm:ss'; // 日期格式常量
 
 // 抽象日期格式化功能
 const formatDateTime = (date, timezone = SHANGHAI_TZ, format = FORMAT) => {
-	return moment(date).tz(timezone).format(format);
+	return date ? moment(date).tz(timezone).format(format) : null;
 };
 
 const secretsLogsModel = {
@@ -54,15 +54,18 @@ const secretsLogsModel = {
 				.where(where)
 				.first()
 				.then((row) => {
-					row.created_at = formatDateTime(row.created_at, SHANGHAI_TZ, FORMAT);
-					row.updated_at = formatDateTime(row.updated_at, SHANGHAI_TZ, FORMAT);
-					return row;
+					if (row) {
+						row.created_at = formatDateTime(row?.created_at, SHANGHAI_TZ, FORMAT);
+						row.updated_at = formatDateTime(row?.updated_at, SHANGHAI_TZ, FORMAT);
+					}
+					return JSON.parse(JSON.stringify(row));
 				})
-				.catch(() => {
+				.catch((error) => {
 					logCast.writeError(__filename + ':' + error.toString());
 					return false;
 				});
 		} catch (error) {
+			logCast.writeError(__filename + ':' + error.toString());
 			return false;
 		}
 	},
@@ -71,15 +74,19 @@ const secretsLogsModel = {
 		const dbWrite = databaseCast.dbWrite();
 		const keysArray = [...this.$fillable, ...this.$guarded, ...this.$hidden]; // 这是你的键数组
 		const dataRow = keysArray.reduce((result, key) => {
-			if (data.hasOwnProperty(key)) {
-				if (this.$casts[key] === 'json') {
-					result[key] = JSON.stringify(data[key]);
-				} else if (this.$casts[key] === 'integer') {
-					result[key] = Number(data[key]);
-				} else if (this.$casts[key] === 'datetime') {
+			// 确保data[key]存在且为可转换类型
+			if (data.hasOwnProperty(key) && data[key] !== null && data[key] !== undefined) {
+				const castType = this.$casts[key];
+				if (castType === 'json') {
+					result[key] = utils.safeJSONStringify(data[key]);
+				} else if (castType === 'integer') {
+					result[key] = utils.safeCastToInteger(data[key]);
+				} else if (castType === 'datetime') {
 					result[key] = data[key] ? utils.dateFormatter(data[key], 'Y-m-d H:i:s', 1, false) : null;
+				} else if (data[key] !== null && data[key] !== undefined) { // 添加对 data[key] 的非空检查
+					result[key] = data[key].toString();
 				} else {
-					result[key] = data[key];
+					delete result[key];
 				}
 			}
 			return result;

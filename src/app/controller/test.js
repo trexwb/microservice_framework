@@ -2,8 +2,8 @@
  * @verifyor: trexwb
  * @Date: 2024-01-12 10:57:08
  * @LastEditors: trexwb
- * @LastEditTime: 2024-03-14 14:00:31
- * @FilePath: /laboratory/microservice/account/src/app/controller/test.js
+ * @LastEditTime: 2024-03-14 15:36:08
+ * @FilePath: /print/Users/wbtrex/website/localServer/node/damei/package/node/microservice_framework/src/app/controller/test.js
  * @Description: 
  * @一花一世界，一叶一如来
  * Copyright (c) 2024 by 杭州大美, All Rights Reserved. 
