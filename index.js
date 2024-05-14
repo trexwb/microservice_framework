@@ -2,12 +2,14 @@
  * @Author: trexwb
  * @Date: 2024-02-01 14:48:18
  * @LastEditors: trexwb
- * @LastEditTime: 2024-04-08 15:54:36
- * @FilePath: /laboratory/Users/wbtrex/website/localServer/node/damei/package/node/microservice_framework/src/index.js
+ * @LastEditTime: 2024-05-14 16:39:58
+ * @FilePath: /conf/Users/wbtrex/website/localServer/node/trexwb/git/microservice_framework/index.js
  * @Description: 
  * @一花一世界，一叶一如来
- * @Copyright (c) 2024 by 杭州大美, All Rights Reserved. 
+ * @Copyright (c) 2024 by 杭州大美, All Rights Reserved.
  */
+'use strict';
+
 require('dotenv').config();
 require('module-alias/register');
 
@@ -52,4 +54,27 @@ if (process.env.MULTIPLE_PROCESSES === "true") {
   }
 } else {
   initApp();
+}
+
+// 计划任务
+const schedule = require('@root/src/schedule/task');
+schedule.handler();
+
+exports.handler = async function(event, context) {
+  // console.log("event: \n" + event);
+  return "Success";
+};
+
+exports.pre_stop = (context, callback) => {
+  try {
+    // 销毁服务前关闭数据库
+    const cacheCast = require('@cast/cache');
+    cacheCast.destroy();
+  } catch (e) { }
+  try {
+    // 销毁服务前关闭数据库
+    const databaseCast = require('@cast/database');
+    databaseCast.destroy();
+  } catch (e) { }
+  callback(null, '');
 }
