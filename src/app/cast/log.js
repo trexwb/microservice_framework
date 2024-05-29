@@ -2,18 +2,26 @@
  * @Author: trexwb
  * @Date: 2024-03-13 12:12:05
  * @LastEditors: trexwb
- * @LastEditTime: 2024-04-09 16:06:38
- * @FilePath: /laboratory/Users/wbtrex/website/localServer/node/damei/package/node/microservice_framework/src/app/cast/log.js
+ * @LastEditTime: 2024-05-29 11:20:49
+ * @FilePath: /conf/Users/wbtrex/website/localServer/node/trexwb/git/microservice_framework/src/app/cast/log.js
  * @Description: 
  * @一花一世界，一叶一如来
  * @Copyright (c) 2024 by 杭州大美, All Rights Reserved. 
  */
+'use strict';
+// log.js
 const ALY = require('aliyun-sdk');
 
-module.exports = {
-  sls: null,
-  connection: function () {
+class LogService {
+  constructor() {
+    this.sls = null;
+  }
+
+  connection() {
     if (!this.sls) {
+      if (!process.env.ALY_ACCESS_KEY_ID || !process.env.ALY_ACCESS_KEY_SECRET) {
+        throw new Error('ALY_ACCESS_KEY_ID and ALY_ACCESS_KEY_SECRET must be set');
+      }
       this.sls = new ALY.SLS({
         accessKeyId: process.env.ALY_ACCESS_KEY_ID,
         secretAccessKey: process.env.ALY_ACCESS_KEY_SECRET,
@@ -22,38 +30,39 @@ module.exports = {
       });
     }
     return this.sls;
-  },
-  putLogs: function (logType, msg, data, ip) {
-    if (!process.env.ALY_ACCESS_KEY_ID || process.env.ALY_ACCESS_KEY_ID == '') {
-      return;
-    }
+  }
+
+  async putLogs(logType, msg, data, ip) {
     try {
+      if (!process.env.ALY_ACCESS_KEY_ID || process.env.ALY_ACCESS_KEY_ID == '') {
+        return;
+      }
       const param = {
         projectName: process.env.ALY_SLS_PROJECT_NAME,
         logStoreName: process.env.ALY_SLS_LOG_STORE_NAME,
         logGroup: {
           logs: [{
             time: Math.floor(new Date().getTime() / 1000),
-            contents: [{ key: logType || 'error', value: `${msg}:${JSON.stringify(data || '')}` }]
+            contents: [{ key: logType || 'error', value: `${msg}:${JSON.stringify(data || {})}` }]
           }],
           topic: process.env.APP_NAME,
           source: ip || '127.0.0.1'
         }
       };
-      this.connection().putLogs(param, function (error) {
-        if (error) {
-          console.error('error:', error)
-        }
-      });
+      await this.connection().putLogs(param);
     } catch (error) {
       console.error(`error:`, error);
       // Here can be added error retry logic or error reporting
     }
-  },
-  writeError: function (msg, data, ip) {
+  }
+
+  writeError(msg, data, ip) {
     this.putLogs(`error[${process.env.NODE_ENV}]`, msg, data, ip);
-  },
-  writeInfo: function (msg, data) {
+  }
+
+  writeInfo(msg, data) {
     this.putLogs(`info[${process.env.NODE_ENV}]`, msg, data);
   }
 }
+
+module.exports = new LogService();

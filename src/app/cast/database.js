@@ -2,7 +2,7 @@
  * @Author: trexwb
  * @Date: 2024-01-15 19:58:20
  * @LastEditors: trexwb
- * @LastEditTime: 2024-05-29 10:16:40
+ * @LastEditTime: 2024-05-29 11:20:42
  * @FilePath: /conf/Users/wbtrex/website/localServer/node/trexwb/git/microservice_framework/src/app/cast/database.js
  * @Description: 
  * @一花一世界，一叶一如来
@@ -23,34 +23,34 @@ module.exports = {
   clientRead: null,
   prefix: process.env.DB_PREFIX || '',
   // 检查并销毁无效的连接池
-  async destroyIfInvalid(client, isWrite = false) {
+  destroyIfInvalid(client, isWrite = false) {
     try {
       if (client?.context?.client?.pool) {
         return client;
       } else {
-        if (client) await client.destroy();
+        if (client) client.destroy();
       }
       return knex(isWrite ? knexConfig.write : knexConfig.read);
     } catch (error) {
       return knex(isWrite ? knexConfig.write : knexConfig.read);
     }
   },
-   // 获取写数据库连接
-   async dbWrite() {
-    this.clientWrite = await this.destroyIfInvalid(this.clientWrite, true);
+  // 获取写数据库连接
+  dbWrite() {
+    this.clientWrite = this.destroyIfInvalid(this.clientWrite, true) || knex(knexConfig.write);
     return this.clientWrite;
   },
 
   // 获取读数据库连接
-  async dbRead() {
-    this.clientRead = await this.destroyIfInvalid(this.clientRead, false);
+  dbRead() {
+    this.clientRead = this.destroyIfInvalid(this.clientRead, false) || knex(knexConfig.read);
     return this.clientRead;
   },
   // 销毁数据库连接
-  async destroy() {
+  destroy() {
     try {
-      if (this.clientWrite) await this.clientWrite.destroy();
-      if (this.clientRead) await this.clientRead.destroy();
+      if (this.clientWrite) this.clientWrite.destroy();
+      if (this.clientRead) this.clientRead.destroy();
     } catch (error) {
       console.log(`Error destroying Mysql connections: ${error}`);
     } finally {

@@ -2,7 +2,7 @@
  * @Author: trexwb
  * @Date: 2024-01-09 08:52:32
  * @LastEditors: trexwb
- * @LastEditTime: 2024-05-29 10:23:58
+ * @LastEditTime: 2024-05-29 11:20:36
  * @FilePath: /conf/Users/wbtrex/website/localServer/node/trexwb/git/microservice_framework/src/app/cast/cache.js
  * @Description: 
  * @一花一世界，一叶一如来
@@ -36,33 +36,19 @@ class RedisCache {
    */
   async createClient() {
     try {
-      const client = redis.createClient({
+      return await redis.createClient({
         password: redisConfig.password || '',
         socket: {
           host: redisConfig.host || '',
           port: redisConfig.port || '',
         },
         database: redisConfig.db || 0,
-      });
-
-      client.on('error', (error) => {
-        logCast.writeError(`Error occurred in Redis client: ${error}`);
-        // 断开连接并尝试重新连接
+      }).on('error', () => {
         this.client = null;
-        client.disconnect();
-      });
-
-      await new Promise((resolve, reject) => {
-        client.connect((err) => {
-          if (err) reject(err);
-          else resolve();
-        });
-      });
-
-      return client;
+      }).connect();
     } catch (error) {
       logCast.writeError(`Error initializing Redis client: ${error}`);
-      throw error; // 重新抛出异常，以便调用者可以处理
+      throw error;
     }
   }
 
