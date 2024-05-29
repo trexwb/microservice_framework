@@ -2,12 +2,13 @@
  * @Author: trexwb
  * @Date: 2024-01-09 08:52:32
  * @LastEditors: trexwb
- * @LastEditTime: 2024-03-23 10:41:27
- * @FilePath: /laboratory/Users/wbtrex/website/localServer/node/damei/package/node/microservice_framework/src/app/cast/cache.js
+ * @LastEditTime: 2024-05-29 10:23:58
+ * @FilePath: /conf/Users/wbtrex/website/localServer/node/trexwb/git/microservice_framework/src/app/cast/cache.js
  * @Description: 
  * @一花一世界，一叶一如来
  * @Copyright (c) 2024 by 杭州大美, All Rights Reserved. 
  */
+'use strict';
 const redis = require('redis');
 const redisConfig = require('@config/redis');
 const logCast = require('@cast/log');
@@ -15,95 +16,145 @@ const logCast = require('@cast/log');
 /**
  * Redis客户端封装，包含连接管理、设置、获取、删除缓存等操作
  */
-module.exports = {
-  client: null,
-  create: async function () {
+class RedisCache {
+  constructor() {
+    this.client = null;
+  }
+
+  /**
+   * 创建Redis连接，如果已经连接则不重复创建
+   */
+  async connect() {
     if (!this.client) {
-      try {
-        this.client = await redis.createClient({
-          password: redisConfig.password || '',
-          socket: {
-            host: redisConfig.host || '',
-            port: redisConfig.port || '',
-          },
-          database: redisConfig.db || 0,
-        }).on('error', () => {
-          this.client = null;
-        }).connect();
-      } catch (error) {
-        logCast.writeError(`Error initializing Redis client: ${error}`);
-      }
+      this.client = await this.createClient();
     }
     return this.client;
-  },
+  }
 
-  set: async function (key, value, expireTime) {
-    await this.create();
+  /**
+   * 创建Redis客户端实例
+   */
+  async createClient() {
     try {
-      await this.client.set(redisConfig.prefix + key, JSON.stringify(value));
-      if (expireTime) {
-        await this.client.expire(redisConfig.prefix + key, expireTime);
+      const client = redis.createClient({
+        password: redisConfig.password || '',
+        socket: {
+          host: redisConfig.host || '',
+          port: redisConfig.port || '',
+        },
+        database: redisConfig.db || 0,
+      });
+
+      client.on('error', (error) => {
+        logCast.writeError(`Error occurred in Redis client: ${error}`);
+        // 断开连接并尝试重新连接
+        this.client = null;
+        client.disconnect();
+      });
+
+      await new Promise((resolve, reject) => {
+        client.connect((err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+
+      return client;
+    } catch (error) {
+      logCast.writeError(`Error initializing Redis client: ${error}`);
+      throw error; // 重新抛出异常，以便调用者可以处理
+    }
+  }
+
+  /**
+   * 设置缓存
+   */
+  async set(key, value, expireTime) {
+    const client = await this.connect();
+    try {
+      if (value) {
+        await client.set(redisConfig.prefix + key, JSON.stringify(value));
+        if (expireTime) {
+          await client.expire(redisConfig.prefix + key, expireTime);
+        }
       }
     } catch (error) {
       logCast.writeError(`Error setting Redis value: ${error}`);
     }
-  },
+  }
 
-  get: async function (key) {
-    await this.create();
+  /**
+   * 获取缓存
+   */
+  async get(key) {
+    const client = await this.connect();
     try {
-      const value = await this.client.get(redisConfig.prefix + key);
-      return value ? JSON.parse(value) : false; // 处理未找到键值的场景，返回null而不是false
+      const value = await client.get(redisConfig.prefix + key);
+      return value ? JSON.parse(value) : null; // 返回null而不是false
     } catch (error) {
       logCast.writeError(`Error getting Redis value: ${error}`);
-      return false;
+      return null;
     }
-  },
+  }
 
-  del: async function (key) {
-    await this.create();
+  /**
+   * 删除缓存
+   */
+  async del(key) {
+    const client = await this.connect();
     try {
-      await this.client.del(redisConfig.prefix + key);
+      await client.del(redisConfig.prefix + key);
     } catch (error) {
       logCast.writeError(`Error deleting Redis key: ${error}`);
     }
-  },
+  }
 
-  setCacheWithTags: async function (tags, key, value) {
+  /**
+   * 与标签关联的缓存设置
+   */
+  async setCacheWithTags(tags, key, value) {
     if (!value) return;
-    await this.create();
+    const client = await this.connect();
     try {
       await Promise.all([
-        this.client.sAdd(`${redisConfig.prefix}tag:${tags}`, redisConfig.prefix + key),
-        this.client.set(redisConfig.prefix + key, JSON.stringify(value))
+        client.sAdd(`${redisConfig.prefix}tag:${tags}`, redisConfig.prefix + key),
+        client.set(redisConfig.prefix + key, JSON.stringify(value)),
       ]);
     } catch (error) {
       logCast.writeError(`Error setting cache with tags: ${redisConfig.prefix + key},${error}`);
     }
-  },
+  }
 
-  clearCacheByTag: async function (tag) {
-    await this.create();
+  /**
+   * 根据标签清除缓存
+   */
+  async clearCacheByTag(tag) {
+    const client = await this.connect();
     try {
-      const keys = await this.client.sMembers(`${redisConfig.prefix}tag:${tag}`);
+      const keys = await client.sMembers(`${redisConfig.prefix}tag:${tag}`);
       await Promise.all(keys.map(async (key) => {
-        await this.client.del(key);
+        await client.del(key);
       }));
-      await this.client.del(`${redisConfig.prefix}tag:${tag}`);
+      await client.del(`${redisConfig.prefix}tag:${tag}`);
     } catch (error) {
       logCast.writeError(`Error clearing cache by tag: ${error}`);
     }
-  },
-
-  destroy: async function () {
-    // if (this.client) {
-    //   try {
-    //     await this.client.disconnect();
-    //     // await this.client.quit();
-    //   } catch (error) {
-    //     logCast.writeError(`Error destroying Redis client: ${error}`);
-    //   }
-    // }
-    this.client = null;
   }
-};
+
+  /**
+   * 销毁Redis连接
+   */
+  async destroy() {
+    if (this.client) {
+      try {
+        await this.client.quit();
+      } catch (error) {
+        logCast.writeError(`Error destroying Redis client: ${error}`);
+      } finally {
+        this.client = null;
+      }
+    }
+  }
+}
+
+module.exports = new RedisCache();
