@@ -2,12 +2,14 @@
  * @Author: trexwb
  * @Date: 2024-01-10 08:57:26
  * @LastEditors: trexwb
- * @LastEditTime: 2024-04-09 12:09:45
- * @FilePath: /laboratory/Users/wbtrex/website/localServer/node/damei/package/node/microservice_framework/src/utils/index.js
+ * @LastEditTime: 2024-07-18 11:21:19
+ * @FilePath: /drive/Users/wbtrex/website/localServer/node/damei/laboratory/microservice/account/src/utils/index.js
  * @Description: 
  * @一花一世界，一叶一如来
  * @Copyright (c) 2024 by 杭州大美, All Rights Reserved. 
  */
+'use strict';
+const moment = require('moment-timezone');
 /*!
  * 工具类：常用数据处理工具
  * Utils - v1.0.0 (2021/7/9, 11:07:14 AM)
@@ -39,18 +41,6 @@ const utils = {
     return value.replace(pattern, (matchStr, group_1) => {
       return matchStr.length + group_1;
     });
-  },
-  /**
-   * @desc 等待多少毫秒再执行 ，同步阻塞
-   * @param {String} millisecond 毫秒
-   **/
-  sleep(millisecond) {
-    let now = new Date();
-    let exitTime = now.getTime() + millisecond;
-    while (true) {
-      now = new Date();
-      if (now.getTime() > exitTime) return;
-    }
   },
   /**
    * @desc 去左右空格
@@ -100,8 +90,11 @@ const utils = {
    * @param isMs  时间戳精度是否为毫秒，默认为true（当精度为秒时传false），type=2时有效
    **/
   dateFormatter(date, format, type = 1, isMs = true) {
-    let formatDate = ""
-    if (type === 3) {
+    let formatDate = moment(date);
+    if (formatDate.isValid()) {
+      // 成功解析，转换为Y-m-d H:i:s格式
+      formatDate = formatDate.format(format);
+    } else if (type === 3) {
       formatDate = utils._formatTimeStr(date, format)
     } else {
       formatDate = utils._formatDate(format, date, type, isMs)
@@ -287,78 +280,6 @@ const utils = {
       end: new Date(end.replace(/\-/g, '/'))
     }
   },
-  /*
-   * @desc 获取Url参数，返回一个对象
-   * @param url url地址
-   * ?a=1&b=2 ==> {a: "1", b: "2"}
-   */
-  getUrlParam(url) {
-    let arrObj = url.split("?");
-    let params = {};
-    if (arrObj.length > 1) {
-      arrObj = arrObj[1].split("&");
-      arrObj.forEach(item => {
-        item = item.split("=");
-        params[item[0]] = item[1];
-      })
-    }
-    return params;
-  },
-  /**
-   * @method 函数防抖
-   * @desc 短时间内多次触发同一事件，只执行最后一次，或者只执行最开始的一次，中间的不执行。
-   * @param func 目标函数
-   * @param wait 延迟执行毫秒数
-   * @param immediate true - 立即执行， false - 延迟执行
-   */
-  debounce(func, wait = 1000, immediate = true) {
-    let timer;
-    return function () {
-      let context = this,
-        args = arguments;
-      if (timer) clearTimeout(timer);
-      if (immediate) {
-        let callNow = !timer;
-        timer = setTimeout(() => {
-          timer = null;
-        }, wait);
-        if (callNow) func.apply(context, args);
-      } else {
-        timer = setTimeout(() => {
-          func.apply(context, args);
-        }, wait)
-      }
-    }
-  },
-  /**
-   * @method 函数节流
-   * @desc 指连续触发事件，但是在 n 秒内只执行一次函数。即 2n 秒内执行 2 次... 。会稀释函数的执行频率。
-   * @param func 函数
-   * @param wait 延迟执行毫秒数
-   * @param type 1 在时间段开始的时候触发 2 在时间段结束的时候触发
-   */
-  throttle(func, wait = 1000, type = 1) {
-    let previous = 0;
-    let timeout;
-    return function () {
-      let context = this;
-      let args = arguments;
-      if (type === 1) {
-        let now = Date.now();
-        if (now - previous > wait) {
-          func.apply(context, args);
-          previous = now;
-        }
-      } else if (type === 2) {
-        if (!timeout) {
-          timeout = setTimeout(() => {
-            timeout = null;
-            func.apply(context, args)
-          }, wait)
-        }
-      }
-    }
-  },
   /**
    * @desc 日期时间格式化为多久之前 如:1分钟前
    * @param date 需要格式化的日期
@@ -483,7 +404,7 @@ const utils = {
   // 工具函数：数组/对象排序
   sortMultiDimensionalObject(obj) {
     if (obj && Array.isArray(obj)) {
-      return  obj.length > 0 ? obj.map(item => utils.sortMultiDimensionalObject(item)) : null;
+      return obj.length > 0 ? obj.map(item => utils.sortMultiDimensionalObject(item)) : null;
     } else if (obj && typeof obj === 'object') {
       const sortedObject = {};
       Object.keys(obj).sort().forEach(key => {
@@ -493,13 +414,38 @@ const utils = {
     } else {
       return obj || null;
     }
+  },
+  // 校验是否是合法的Cron格式
+  isValidCronFormatFlexible(rowTime) {
+    // 正则表达式匹配Cron格式，秒字段可选：[秒] 分 时 日 月 周
+    // 秒（可选）：0-59 或 省略
+    // 分钟：0-59
+    // 小时：0-23
+    // 日期：1-31
+    // 月份：1-12
+    // 星期：0-6（0和7都代表周日）
+    // 使用非捕获组(?:...)和问号?来标记秒字段为可选
+    const cronPatternWithSeconds = /^([0-5]?\d|\*|(?:\*\/[1-9][0-9]?))\s([0-5]?\d|\*|(?:\*\/[1-9][0-9]?))\s([01]?\d|2[0-3]|\*)\s([1-9]|1\d|2[0-9]|3[01]|\*)\s(1[0-2]|0?[1-9]|\*)\s([0-6]|\*)$/;
+    const cronPatternWithoutSeconds = /^([0-5]?\d|\*|(?:\*\/[1-9][0-9]?))\s([01]?\d|2[0-3]|\*)\s([1-9]|1\d|2[0-9]|3[01]|\*)\s(1[0-2]|0?[1-9]|\*)\s([0-6]|\*)$/;
+    return cronPatternWithSeconds.test(rowTime) || cronPatternWithoutSeconds.test(rowTime);
+    // 秒字段（可选）：
+    // (\*|([0-5]?\d|\*)\s)?：匹配0-59的数字或星号（*），并且是可选的（用?标记为可选）。同时，为了兼容*/10这样的格式，使用了\*。
+    // 分钟字段：
+    // ([0-5]?\d|\*)\s：匹配0-59的数字或星号（*）。
+    // 小时字段：
+    // ([01]?\d|2[0-3]|\*)\s：匹配0-23的数字或星号（*）。
+    // 日期字段：
+    // ([1-9]|1\d|2[0-9]|3[01]|\*)\s：匹配1-31的数字或星号（*）。
+    // 月份字段：
+    // (1[0-2]|0?[1-9]|\*)\s：匹配1-12的数字或星号（*），注意月份可以是1-9或01-09。
+    // 星期字段：
+    // ([0-6]|\*)：匹配0-6的数字或星号（*）。
   }
 }
 
 module.exports = {
   titleCase: utils.titleCase,
   compressLetter: utils.compressLetter,
-  sleep: utils.sleep,
   trim: utils.trim,
   trimAll: utils.trimAll,
   replaceAll: utils.replaceAll,
@@ -511,14 +457,12 @@ module.exports = {
   unique: utils.unique,
   distinctArray: utils.distinctArray,
   getDateTimeSlot: utils.getDateTimeSlot,
-  getUrlParam: utils.getUrlParam,
   getUUID: utils.getUUID,
-  debounce: utils.debounce,
-  throttle: utils.throttle,
   formatTimeAgo: utils.formatTimeAgo,
   empty: utils.empty,
   generateRandomString: utils.generateRandomString,
   safeJSONStringify: utils.safeJSONStringify,
   safeCastToInteger: utils.safeCastToInteger,
-  sortMultiDimensionalObject: utils.sortMultiDimensionalObject
+  sortMultiDimensionalObject: utils.sortMultiDimensionalObject,
+  isValidCronFormatFlexible: utils.isValidCronFormatFlexible
 }

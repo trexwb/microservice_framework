@@ -2,8 +2,8 @@
  * @Author: trexwb
  * @Date: 2024-03-11 19:59:12
  * @LastEditors: trexwb
- * @LastEditTime: 2024-04-18 09:30:00
- * @FilePath: /laboratory/Users/wbtrex/website/localServer/node/damei/package/node/microservice_framework/backup.js
+ * @LastEditTime: 2024-04-18 09:29:15
+ * @FilePath: /laboratory/microservice/account/backup.js
  * @Description: 
  * @一花一世界，一叶一如来
  * @Copyright (c) 2024 by 杭州大美, All Rights Reserved. 
@@ -32,7 +32,7 @@ async function backupTable(table) {
     await knex.raw('SET FOREIGN_KEY_CHECKS=1');
 };`
       const now = new Date();
-      const saveDir = path.join(`/data/database`, process.env.NODE_ENV, process.env.DB_DATABASE, now.toISOString().slice(0, 10));
+      const saveDir = path.join(`/data/database`, process.env.DB_DATABASE, now.toISOString().slice(0, 10));
       if (!fs.existsSync(saveDir)) {
         fs.mkdirSync(saveDir, { recursive: true });
       }

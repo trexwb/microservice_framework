@@ -2,12 +2,13 @@
  * @Author: trexwb
  * @Date: 2024-01-15 12:21:18
  * @LastEditors: trexwb
- * @LastEditTime: 2024-04-09 16:07:00
- * @FilePath: /laboratory/Users/wbtrex/website/localServer/node/damei/package/node/microservice_framework/src/utils/status.js
+ * @LastEditTime: 2024-07-08 11:33:47
+ * @FilePath: /drive/Users/wbtrex/website/localServer/node/damei/laboratory/microservice/account/src/utils/status.js
  * @Description: 
  * @一花一世界，一叶一如来
  * Copyright (c) 2024 by 杭州大美, All Rights Reserved. 
  */
+'use strict';
 
 // 200 OK: 请求成功，对于GET和POST请求的正常回应。
 // 201 Created: 请求成功并且服务器创建了新的资源，常用于POST或PUT请求。
@@ -35,5 +36,33 @@ module.exports = {
     return {
       error: msg
     }
+  },
+  havePermissions: (role, permission, args) => {
+    if (!args) return false;
+    if (args.roles && Array.isArray(args.roles) && args.permissions && Array.isArray(args.permissions)) {
+      return args.roles.includes(role) && args.permissions.includes(`${role}:${permission}`);
+    }
+    return false;
+  },
+  getContext: (args) => {
+    const context = (typeof args[args.length - 1] === 'object' && args[args.length - 1] !== null) ? args.pop() || null : null;
+    return { params: args, context: context };
+    // let paramsData = {
+    //   ...params.reduce((acc, curr) => {
+    //     acc[curr] = null;
+    //     return acc;
+    //   }, {}),
+    //   ...args.reduce((acc, curr, index) => {
+    //     acc[params[index]] = curr;
+    //     return acc;
+    //   }, {})
+    // };
+    // for (let i = args.length - 1; i >= 0; i--) {
+    //   if (typeof args[i] === 'object' && args[i] !== null) {
+    //     paramsData.context = args[i];
+    //     return paramsData;
+    //   }
+    // }
+    // return paramsData;
   }
 };

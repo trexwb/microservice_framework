@@ -1,9 +1,9 @@
 /*** 
  * @Author: trexwb
- * @Date: 2024-01-29 08:30:55
+ * @Date: 2024-03-21 11:23:30
  * @LastEditors: trexwb
- * @LastEditTime: 2024-07-08 16:27:16
- * @FilePath: /drive/Users/wbtrex/website/localServer/node/damei/laboratory/microservice/account/src/app/model/secrets.js
+ * @LastEditTime: 2024-07-08 16:31:30
+ * @FilePath: /drive/Users/wbtrex/website/localServer/node/damei/laboratory/microservice/account/src/app/model/usersAlipay.js
  * @Description: 
  * @一花一世界，一叶一如来
  * @Copyright (c) 2024 by 杭州大美, All Rights Reserved. 
@@ -13,13 +13,15 @@
 const databaseCast = require('@cast/database');
 const baseModel = require('./base');
 
-const secretsModel = {
-  $table: `${databaseCast.prefix}secrets`,// 为模型指定表名
+const usersRolesModel = {
+  $table: `${databaseCast.prefix}users_alipay`,// 为模型指定表名
   $primaryKey: 'id', // 默认情况下指定'id'作为表主键，也可以指定主键名
   $fillable: [
-    'channel',
-    'app_id',
-    'permissions',
+    'nickname',
+    'avatar',
+    'unionid',
+    'openid',
+    'uuid',
     'extension',
     'status',
     'created_at',
@@ -27,17 +29,20 @@ const secretsModel = {
   ],// 定义允许添加、更新的字段白名单，不设置则无法添加数据
   $guarded: ['id'],// 定义不允许更新的字段黑名单
   $casts: {
-    channel: 'string',
-    app_id: 'string',
-    app_secret: 'string',
-    status: 'integer',
-    extension: 'json'
+    site_id: 'string',
+    nickname: 'string',
+    avatar: 'string',
+    unionid: 'string',
+    openid: 'string',
+    uuid: 'string',
+    extension: 'json',
+    status: 'integer'
   },
   $hidden: [
-    'app_secret',
+    'site_id',
     'deleted_at'
   ],
   ...baseModel
 }
 
-module.exports = secretsModel;
+module.exports = usersRolesModel;

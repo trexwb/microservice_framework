@@ -8,6 +8,8 @@
  * 一花一世界，一叶一如来
  * @Copyright (c) 2024 by 杭州大美, All Rights Reserved. 
  */
+'use strict';
+
 const path = require('path');
 
 let aliasMap = {};

@@ -2,8 +2,8 @@
  * @Author: trexwb
  * @Date: 2024-01-15 19:58:20
  * @LastEditors: trexwb
- * @LastEditTime: 2024-05-29 11:20:42
- * @FilePath: /conf/Users/wbtrex/website/localServer/node/trexwb/git/microservice_framework/src/app/cast/database.js
+ * @LastEditTime: 2024-05-29 11:15:03
+ * @FilePath: /laboratory/microservice/account/src/app/cast/database.js
  * @Description: 
  * @一花一世界，一叶一如来
  * @Copyright (c) 2024 by 杭州大美, All Rights Reserved. 

@@ -2,12 +2,14 @@
  * @Author: trexwb
  * @Date: 2024-01-17 16:49:29
  * @LastEditors: trexwb
- * @LastEditTime: 2024-02-29 18:52:13
+ * @LastEditTime: 2024-05-11 21:16:23
  * @FilePath: /laboratory/microservice/account/src/app/middleware/route.js
  * @Description: 
  * @一花一世界，一叶一如来
  * @Copyright (c) 2024 by 杭州大美, All Rights Reserved. 
  */
+'use strict';
+
 // const path = require('path');
 // const fs = require('fs');
 
