@@ -3,7 +3,7 @@
  * @Date: 2024-08-27 12:06:12
  * @LastEditors: trexwb
  * @LastEditTime: 2024-08-27 12:06:13
- * @FilePath: /git/Users/wbtrex/website/localServer/node/damei/package/node/microservice_framework/src/app/helper/base.js
+ * @FilePath: //microservice_framework/src/app/helper/base.js
  * @Description: 
  * @一花一世界，一叶一如来
  * @Copyright (c) 2024 by 杭州大美, All Rights Reserved. 
