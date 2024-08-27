@@ -2,7 +2,7 @@
  * @Author: trexwb
  * @Date: 2024-01-17 16:49:29
  * @LastEditors: trexwb
- * @LastEditTime: 2024-07-08 16:27:50
+ * @LastEditTime: 2024-08-23 17:41:39
  * @FilePath: /drive/Users/wbtrex/website/localServer/node/damei/laboratory/microservice/account/src/app/model/secretsLogs.js
  * @Description: 
  * @一花一世界，一叶一如来
@@ -10,11 +10,16 @@
  */
 'use strict';
 
-const databaseCast = require('@cast/database');
-const baseModel = require('./base');
+const dbInterface = require('@interface/database');
+const baseModel = require('@model/base');
+const CastBoolean = require('@cast/boolean');
+const CastDatetime = require('@cast/datetime');
+const CastInteger = require('@cast/integer');
+const CastJson = require('@cast/json');
+const CastString = require('@cast/string');
 
 const secretsLogsModel = {
-  $table: `${databaseCast.prefix}secrets_logs`,// 为模型指定表名
+  $table: `${dbInterface.prefix}secrets_logs`,// 为模型指定表名
   $primaryKey: 'id', // 默认情况下指定'id'作为表主键，也可以指定主键名
   $fillable: [
     'secret_id',
@@ -25,9 +30,9 @@ const secretsLogsModel = {
   ],// 定义允许添加、更新的字段白名单，不设置则无法添加数据
   $guarded: ['id'],// 定义不允许更新的字段黑名单
   $casts: {
-    secret_id: 'integer',
-    source: 'json',
-    handle: 'json'
+    secret_id: new CastInteger(),
+    source: new CastJson(),
+    handle: new CastJson()
   },
   $hidden: [],
   ...baseModel

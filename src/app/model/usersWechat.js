@@ -2,7 +2,7 @@
  * @Author: trexwb
  * @Date: 2024-03-21 11:27:25
  * @LastEditors: trexwb
- * @LastEditTime: 2024-07-08 16:32:59
+ * @LastEditTime: 2024-08-23 18:52:17
  * @FilePath: /drive/Users/wbtrex/website/localServer/node/damei/laboratory/microservice/account/src/app/model/usersWechat.js
  * @Description: 
  * @一花一世界，一叶一如来
@@ -10,14 +10,16 @@
  */
 'use strict';
 
-const databaseCast = require('@cast/database');
-const baseModel = require('./base');
-
-const utils = require('@utils/index');
-const logCast = require('@cast/log');
+const dbInterface = require('@interface/database');
+const baseModel = require('@model/base');
+const CastBoolean = require('@cast/boolean');
+const CastDatetime = require('@cast/datetime');
+const CastInteger = require('@cast/integer');
+const CastJson = require('@cast/json');
+const CastString = require('@cast/string');
 
 const usersRolesModel = {
-  $table: `${databaseCast.prefix}users_wechat`,// 为模型指定表名
+  $table: `${dbInterface.prefix}users_wechat`,// 为模型指定表名
   $primaryKey: 'id', // 默认情况下指定'id'作为表主键，也可以指定主键名
   $fillable: [
     'nickname',
@@ -32,14 +34,14 @@ const usersRolesModel = {
   ],// 定义允许添加、更新的字段白名单，不设置则无法添加数据
   $guarded: ['id'],// 定义不允许更新的字段黑名单
   $casts: {
-    site_id: 'string',
-    nickname: 'string',
-    avatar: 'string',
-    unionid: 'string',
-    openid: 'string',
-    uuid: 'string',
-    extension: 'json',
-    status: 'integer'
+    site_id: new CastString(),
+    nickname: new CastString(),
+    avatar: new CastString(),
+    unionid: new CastString(),
+    openid: new CastString(),
+    uuid: new CastString(),
+    extension: new CastJson(),
+    status: new CastInteger()
   },
   $hidden: [
     'site_id',

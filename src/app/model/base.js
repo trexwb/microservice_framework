@@ -1,17 +1,28 @@
 /*** 
  * @Author: trexwb
- * @Date: 2024-07-08 16:16:35
+ * @Date: 2024-08-27 12:06:49
  * @LastEditors: trexwb
- * @LastEditTime: 2024-07-08 17:38:30
+ * @LastEditTime: 2024-08-27 12:06:50
+ * @FilePath: /git/Users/wbtrex/website/localServer/node/damei/package/node/microservice_framework/src/app/model/base.js
+ * @Description: 
+ * @一花一世界，一叶一如来
+ * @Copyright (c) 2024 by 杭州大美, All Rights Reserved. 
+ */
+/*** 
+ * @Author: trexwb
+ * @Date: 2024-07-17 15:50:46
+ * @LastEditors: trexwb
+ * @LastEditTime: 2024-08-26 17:39:45
  * @FilePath: /drive/Users/wbtrex/website/localServer/node/damei/laboratory/microservice/account/src/app/model/base.js
  * @Description: 
  * @一花一世界，一叶一如来
  * @Copyright (c) 2024 by 杭州大美, All Rights Reserved. 
  */
+
 'use strict';
-const databaseCast = require('@cast/database');
+const dbInterface = require('@interface/database');
 const utils = require('@utils/index');
-const logCast = require('@cast/log');
+const logInterface = require('@interface/log');
 const moment = require('moment-timezone');
 
 const DEFAULT_LIMIT = 10; // 默认分页限制
@@ -31,8 +42,8 @@ const baseModel = {
       return acc;
     }, {});
   },
-  getRowOrTrashRow: async function (where, deletedAtQuery) {
-    const dbRead = databaseCast.dbRead();
+  getRowOrTrashRow: async function (where, order, deletedAtQuery) {
+    const dbRead = dbInterface.dbRead();
     try {
       const fields = [...new Set([...this.$guarded, ...this.$fillable, ...this.$hidden])];
       const query = dbRead.select(fields)
@@ -43,6 +54,11 @@ const baseModel = {
         if (deletedAtQuery) query.whereNotNull('deleted_at');
         else query.whereNull('deleted_at');
       }
+      if (order) {
+        query.orderBy(order);
+      } else if (fields.includes('sort')) {
+        query.orderByRaw('if(`sort`>0,1,0) DESC,sort ASC').orderBy([{ column: 'sort', order: 'ASC' }]);
+      }
       return await query.first()
         .then((row) => {
           if (row) {
@@ -52,24 +68,24 @@ const baseModel = {
           return JSON.parse(JSON.stringify(row || false));
         })
         .catch((error) => {
-          logCast.writeError(__filename + ':' + error.toString());
+          logInterface.writeError(__filename + ':' + error.toString());
           return false;
         });
     } catch (error) {
-      logCast.writeError(__filename + ':' + error.toString());
+      logInterface.writeError(__filename + ':' + error.toString());
       return false;
     }
   },
-  getRow: async function (where) {
-    return await this.getRowOrTrashRow(where, false);
+  getRow: async function (where, order) {
+    return await this.getRowOrTrashRow(where, order, false);
   },
-  getTrashRow: async function (where) {
-    return await this.getRowOrTrashRow(where, true);
+  getTrashRow: async function (where, order) {
+    return await this.getRowOrTrashRow(where, order, true);
   },
   getListOrTrashList: async function (where, order, limit, offset, deletedAtQuery) {
-    const dbRead = databaseCast.dbRead();
+    const dbRead = dbInterface.dbRead();
     limit = limit > MAX_LIMIT ? MAX_LIMIT : limit || DEFAULT_LIMIT;
-    order = !order ? [{ column: 'id', order: 'ASC' }] : order;
+    order = !order ? [{ column: this.$primaryKey || 'id', order: 'ASC' }] : order;
     try {
       const fields = [...new Set([...this.$guarded, ...this.$fillable, ...this.$hidden])];
       const queryTotal = dbRead.from(this.$table).where(where);
@@ -78,7 +94,7 @@ const baseModel = {
         if (deletedAtQuery) queryTotal.whereNotNull('deleted_at');
         else queryTotal.whereNull('deleted_at');
       }
-      const total = await queryTotal.count('id', { as: 'total' })
+      const total = await queryTotal.count(this.$primaryKey || 'id', { as: 'total' })
         .first()
         .then((row) => {
           return row.total || 0;
@@ -92,8 +108,11 @@ const baseModel = {
           if (deletedAtQuery) queryRows.whereNotNull('deleted_at');
           else queryRows.whereNull('deleted_at');
         }
-        if (order) queryRows.orderBy(order)
-        // else queryRows.orderByRaw('if(`sort`>0,1,0) DESC,sort ASC').orderBy([{ column: 'sort', order: 'ASC' }]);
+        if (order) {
+          queryRows.orderBy(order);
+        } else if (fields.includes('sort')) {
+          queryRows.orderByRaw('if(`sort`>0,1,0) DESC,sort ASC').orderBy([{ column: 'sort', order: 'ASC' }]);
+        }
         const rows = await queryRows.select(fields)
           .limit(limit)
           .offset(offset || 0)
@@ -105,7 +124,7 @@ const baseModel = {
             }));
           })
           .catch((error) => {
-            logCast.writeError(__filename + ':' + error.toString());
+            logInterface.writeError(__filename + ':' + error.toString());
             return [];
           });
         return { total: total, list: rows };
@@ -113,7 +132,7 @@ const baseModel = {
         return { total: 0, list: [] };
       }
     } catch (error) {
-      logCast.writeError(__filename + ':' + error.toString());
+      logInterface.writeError(__filename + ':' + error.toString());
       return { total: 0, list: [] };
     }
   },
@@ -130,7 +149,7 @@ const baseModel = {
     return await this.getCountOrTrashCount(where, true);
   },
   getCountOrTrashCount: async function (where, deletedAtQuery) {
-    const dbRead = databaseCast.dbRead();
+    const dbRead = dbInterface.dbRead();
     try {
       const fields = [...new Set([...this.$guarded, ...this.$fillable, ...this.$hidden])];
       const queryTotal = dbRead.from(this.$table).where(where);
@@ -139,7 +158,7 @@ const baseModel = {
         if (deletedAtQuery) queryTotal.whereNotNull('deleted_at');
         else queryTotal.whereNull('deleted_at');
       }
-      return await queryTotal.count(this.$guarded[0] || 'id', { as: 'total' })
+      return await queryTotal.count(this.$primaryKey || 'id', { as: 'total' })
         .first()
         .then((row) => {
           return row.total || 0;
@@ -147,18 +166,18 @@ const baseModel = {
           return 0;
         });
     } catch (error) {
-      logCast.writeError(__filename + ':' + error.toString());
+      logInterface.writeError(__filename + ':' + error.toString());
       return 0;
     }
   },
-  getAll: async function (where) {
-    return await this.getALLOrTrashALL(where, false);
+  getAll: async function (where, order) {
+    return await this.getALLOrTrashALL(where, order, false);
   },
-  getTrashAll: async function (where,) {
-    return await this.getALLOrTrashALL(where, true);
+  getTrashAll: async function (where, order) {
+    return await this.getALLOrTrashALL(where, order, true);
   },
-  getALLOrTrashALL: async function (where, deletedAtQuery) {
-    const dbRead = databaseCast.dbRead();
+  getALLOrTrashALL: async function (where, order, deletedAtQuery) {
+    const dbRead = dbInterface.dbRead();
     try {
       const fields = [...new Set([...this.$guarded, ...this.$fillable, ...this.$hidden])];
       const queryRows = dbRead.from(this.$table).where(where);
@@ -166,6 +185,11 @@ const baseModel = {
       if (fields.includes('deleted_at')) {
         if (deletedAtQuery) queryRows.whereNotNull('deleted_at');
         else queryRows.whereNull('deleted_at');
+      }
+      if (order) {
+        queryRows.orderBy(order);
+      } else if (fields.includes('sort')) {
+        queryRows.orderByRaw('if(`sort`>0,1,0) DESC,sort ASC').orderBy([{ column: 'sort', order: 'ASC' }]);
       }
       return await queryRows.select(fields)
         .where(where)
@@ -179,67 +203,98 @@ const baseModel = {
           }));
         })
         .catch((error) => {
-          logCast.writeError(__filename + ':' + error.toString());
+          logInterface.writeError(__filename + ':' + error.toString());
           return [];
         });
     } catch (error) {
-      logCast.writeError(__filename + ':' + error.toString());
+      logInterface.writeError(__filename + ':' + error.toString());
       return false;
     }
   },
-  update: async function (where, data) {
+  update: async function (where, data, writeLogs = null) {
     if (!where || !data) return;
-    const dbWrite = databaseCast.dbWrite();
+    const dbWrite = dbInterface.dbWrite();
     const keysArray = [...this.$fillable, ...this.$guarded, ...this.$hidden]; // 过滤不存在的字段
     const dataRow = keysArray.reduce((result, key) => {
-      // 确保data[key]存在且为可转换类型
-      if (data.hasOwnProperty(key) && data[key] !== null && data[key] !== undefined) {
+      // 检查data对象是否具有当前键，并且该键对应的值不为空或未定义
+      if (data.hasOwnProperty(key) && data[key] !== undefined) {
+        // 获取当前键对应的转换类型（如果定义了的话）
         const castType = this.$casts[key];
-        if (castType === 'json') {
-          result[key] = utils.safeJSONStringify(data[key]);
-        } else if (castType === 'integer') {
-          result[key] = utils.safeCastToInteger(data[key]);
-        } else if (castType === 'datetime') {
-          result[key] = data[key] ? utils.dateFormatter(data[key], 'Y-m-d H:i:s', 1, false) : null;
-        } else if (data[key] !== null && data[key] !== undefined) { // 添加对 data[key] 的非空检查
-          result[key] = data[key].toString();
+        // 如果转换类型存在，则使用set方法对数据进行转换并赋值给结果对象
+        if (castType) {
+          result[key] = castType.set(data[key]);
         } else {
-          delete result[key];
+          // 如果没有定义转换类型，且值不为空或未定义，则将其转换为字符串后赋值给结果对象
+          result[key] = data[key].toString();
         }
       }
+      // 返回累积的结果对象
       return result;
     }, {});
-    return await dbWrite(this.$table).update({ ...dataRow, updated_at: dbWrite.fn.now() }).where('id', '>', 0).where(where);
+    if (writeLogs) {
+      const fields = [...new Set([...this.$guarded, ...this.$fillable, ...this.$hidden])];
+      return await dbWrite(this.$table).select(fields).where(where).then(async (result) => {
+        if (result.length > 0) {
+          await dbWrite(this.$table).update({ ...dataRow, updated_at: dbWrite.fn.now() }).where(where).then(async () => {
+            if (result && writeLogs) await writeLogs(result, dataRow);
+          }).catch((error) => {
+            throw __filename + ':' + error.toString();
+          });
+          return result.map(item => item.id);
+        }
+      });
+    } else {
+      return await dbWrite(this.$table).update({ ...dataRow, updated_at: dbWrite.fn.now() }).where(where);
+    }
   },
-  save: async function (data) {
+  save: async function (data, writeLogs = null) {
     if (!data) return;
-    const dbWrite = databaseCast.dbWrite();
-    const keysArray = [...this.$fillable, ...this.$guarded, ...this.$hidden]; // 这是你的键数组
-    const dataRow = keysArray.reduce((result, key) => {
-      // 确保data[key]存在且为可转换类型
-      if (data.hasOwnProperty(key) && data[key] !== null && data[key] !== undefined) {
-        const castType = this.$casts[key];
-        if (castType === 'json') {
-          result[key] = utils.safeJSONStringify(data[key]);
-        } else if (castType === 'integer') {
-          result[key] = utils.safeCastToInteger(data[key]);
-        } else if (castType === 'datetime') {
-          result[key] = data[key] ? utils.dateFormatter(data[key], 'Y-m-d H:i:s', 1, false) : null;
-        } else if (data[key] !== null && data[key] !== undefined) { // 添加对 data[key] 的非空检查
-          result[key] = data[key].toString();
-        } else {
-          delete result[key];
-        }
+    if (Array.isArray(data)) {
+      let result = [];
+      for (const item of data) {
+        result.push(await this.saveDo(item, writeLogs));
       }
       return result;
+    } else if (typeof data === 'object' && data !== null) {
+      return await this.saveDo(data, writeLogs);
+    } else {
+      return;
+    }
+  },
+  saveDo: async function (data, writeLogs = null) {
+    if (!data) return;
+    const dbWrite = dbInterface.dbWrite();
+    const keysArray = [...this.$fillable, ...this.$guarded, ...this.$hidden]; // 这是你的键数组
+    // 使用reduce函数对keysArray中的每个键进行处理，以构建一个新的数据对象
+    const dataRow = keysArray.reduce((result, key) => {
+      // 检查data对象是否具有当前键，并且该键对应的值不为空或未定义
+      if (data.hasOwnProperty(key) && data[key] !== undefined) {
+        // 获取当前键对应的转换类型（如果定义了的话）
+        const castType = this.$casts[key];
+        // 如果转换类型存在，则使用set方法对数据进行转换并赋值给结果对象
+        if (castType) {
+          result[key] = castType.set(data[key]);
+        } else {
+          // 如果没有定义转换类型，且值不为空或未定义，则将其转换为字符串后赋值给结果对象
+          result[key] = data[key].toString();
+        }
+      }
+      // 返回累积的结果对象
+      return result;
     }, {});
-
     if (!dataRow.id) {
-      return await dbWrite(this.$table).insert({ ...dataRow, created_at: dbWrite.fn.now(), updated_at: dbWrite.fn.now() });
+      return await dbWrite(this.$table).insert({ ...dataRow, created_at: dbWrite.fn.now(), updated_at: dbWrite.fn.now() })
+        .then(async (affects) => {
+          if (affects[0] && writeLogs) await writeLogs(affects, dataRow);
+          return affects;
+        })
+        .catch((error) => {
+          throw __filename + ':' + error.toString();
+        });
     } else {
       try {
-        return await dbWrite(this.$table).select('id').where(function () {
-          this.where('id', '>', 0)
+        const fields = [...new Set([...this.$guarded, ...this.$fillable, ...this.$hidden])];
+        return await dbWrite(this.$table).select(fields).where(function () {
           if (Array.isArray(dataRow.id)) {
             if (dataRow.id.length > 0) this.whereIn('id', dataRow.id);
           } else {
@@ -248,27 +303,37 @@ const baseModel = {
         }).then(async (result) => {
           if (result.length > 0) {
             await dbWrite(this.$table).update({ ...dataRow, updated_at: dbWrite.fn.now() }).where(function () {
-              this.where('id', '>', 0)
               if (Array.isArray(dataRow.id)) {
                 if (dataRow.id.length > 0) this.whereIn('id', dataRow.id);
               } else {
                 this.where('id', dataRow.id);
               }
+            }).then(async () => {
+              if (result && writeLogs) await writeLogs(result, dataRow);
+            }).catch((error) => {
+              throw __filename + ':' + error.toString();
             });
-            return Array.isArray(dataRow.id) ? dataRow.id : [dataRow.id];
+            return result.map(item => item.id);
           } else {
-            return await dbWrite(this.$table).insert({ ...dataRow, created_at: dbWrite.fn.now(), updated_at: dbWrite.fn.now() });
+            return await dbWrite(this.$table).insert({ ...dataRow, created_at: dbWrite.fn.now(), updated_at: dbWrite.fn.now() })
+              .then(async (affects) => {
+                if (affects[0] && writeLogs) await writeLogs(affects, dataRow);
+                return affects;
+              })
+              .catch((error) => {
+                throw __filename + ':' + error.toString();
+              });
           }
         });
       } catch (error) {
-        logCast.writeError(__filename + ':' + error.toString());
+        logInterface.writeError(__filename + ':' + error.toString());
         return false;
       }
     }
   },
   restore: async function (where) {
     if (!where) return;
-    const dbWrite = databaseCast.dbWrite();
+    const dbWrite = dbInterface.dbWrite();
     try {
       return await dbWrite(this.$table)
         .where(where)
@@ -276,7 +341,7 @@ const baseModel = {
           deleted_at: null
         });
     } catch (error) {
-      logCast.writeError(__filename + ':' + error.toString());
+      logInterface.writeError(__filename + ':' + error.toString());
       return false;
     }
   },
@@ -292,7 +357,7 @@ const baseModel = {
   },
   softDelete: async function (where) {
     if (!where) return;
-    const dbWrite = databaseCast.dbWrite();
+    const dbWrite = dbInterface.dbWrite();
     try {
       return await dbWrite(this.$table)
         .where(where)
@@ -300,17 +365,17 @@ const baseModel = {
           deleted_at: dbWrite.fn.now()
         });
     } catch (error) {
-      logCast.writeError(__filename + ':' + error.toString());
+      logInterface.writeError(__filename + ':' + error.toString());
       return false;
     }
   },
   forceDelete: async function (where) {
     if (!where) return;
-    const dbWrite = databaseCast.dbWrite();
+    const dbWrite = dbInterface.dbWrite();
     try {
       return await dbWrite(this.$table).delete(where);
     } catch (error) {
-      logCast.writeError(__filename + ':' + error.toString());
+      logInterface.writeError(__filename + ':' + error.toString());
       return false;
     }
   }

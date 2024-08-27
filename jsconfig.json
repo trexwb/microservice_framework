@@ -5,7 +5,7 @@
       "@root/*": [
         "./*"
       ],
-      "@./src/*": [
+      "@src/*": [
         "./src/*"
       ],
       "@app/*": [
@@ -17,8 +17,17 @@
       "@controller/*": [
         "./src/app/controller/*"
       ],
+      "@event/*": [
+        "./src/app/event/*"
+      ],
       "@helper/*": [
         "./src/app/helper/*"
+      ],
+      "@interface/*": [
+        "./src/app/interface/*"
+      ],
+      "@job/*": [
+        "./src/app/job/*"
       ],
       "@middleware/*": [
         "./src/app/middleware/*"
@@ -26,27 +35,21 @@
       "@model/*": [
         "./src/app/model/*"
       ],
+      "@schedule/*": [
+        "./src/app/schedule/*"
+      ],
       "@service/*": [
         "./src/app/service/*"
       ],
       "@config/*": [
         "./src/config/*"
       ],
-      "@evevnt/*": [
-        "./src/evevnt/*"
-      ],
-      "@job/*": [
-        "./src/job/*"
-      ],
       "@resources/*": [
         "./src/resources/*"
       ],
-      "@schedule/*": [
-        "./src/schedule/*"
-      ],
       "@utils/*": [
         "./src/utils/*"
-      ],
+      ]
     }
   }
 }

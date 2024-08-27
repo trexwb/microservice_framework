@@ -2,7 +2,7 @@
  * @Author: trexwb
  * @Date: 2024-01-17 16:49:29
  * @LastEditors: trexwb
- * @LastEditTime: 2024-07-08 16:28:04
+ * @LastEditTime: 2024-08-23 17:41:45
  * @FilePath: /drive/Users/wbtrex/website/localServer/node/damei/laboratory/microservice/account/src/app/model/users.js
  * @Description: 
  * @一花一世界，一叶一如来
@@ -10,11 +10,16 @@
  */
 'use strict';
 
-const databaseCast = require('@cast/database');
-const baseModel = require('./base');
+const dbInterface = require('@interface/database');
+const baseModel = require('@model/base');
+const CastBoolean = require('@cast/boolean');
+const CastDatetime = require('@cast/datetime');
+const CastInteger = require('@cast/integer');
+const CastJson = require('@cast/json');
+const CastString = require('@cast/string');
 
 const usersModel = {
-  $table: `${databaseCast.prefix}users`,// 为模型指定表名
+  $table: `${dbInterface.prefix}users`,// 为模型指定表名
   $primaryKey: 'id', // 默认情况下指定'id'作为表主键，也可以指定主键名
   $fillable: [
     'nickname',
@@ -29,17 +34,17 @@ const usersModel = {
   ],// 定义允许添加、更新的字段白名单，不设置则无法添加数据
   $guarded: ['id'],// 定义不允许更新的字段黑名单
   $casts: {
-    nickname: 'string',
-    email: 'string',
-    mobile: 'string',
-    avatar: 'string',
-    password: 'string',
-    salt: 'string',
-    remember_token: 'string',
-    uuid: 'string',
-    secret: 'string',
-    extension: 'json',
-    status: 'integer'
+    nickname: new CastString(),
+    email: new CastString(),
+    mobile: new CastString(),
+    avatar: new CastString(),
+    password: new CastString(),
+    salt: new CastString(),
+    remember_token: new CastString(),
+    uuid: new CastString(),
+    secret: new CastString(),
+    extension: new CastJson(),
+    status: new CastInteger()
   },
   $hidden: [
     'password',
