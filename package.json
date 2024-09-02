@@ -4,10 +4,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "setup": "knex migrate:latest && knex seed:run",
     "dev": "nodemon --trace-deprecation ./src/index.js",
     "start": "node ./src/index.js",
-    "backup": "NODE_ENV=production node ./src/backup.js",
+    "module:install": "yarn install",
+    "module:update": "ncu -u && yarn install",
+    "db:install": "knex migrate:latest && knex seed:run",
+    "db:backup": "NODE_ENV=production node ./src/backup.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
